@@ -29,14 +29,14 @@ export const PoweredBy = () => {
 
   return (
     <div
-      className={cx(style, 'nb-brand')}
-      dangerouslySetInnerHTML={{
-        __html: parseHTML(
-          customBrandPlugin?.options?.options?.brand ||
-            `Powered by <a href="${urls[i18n.language] || urls['en-US']}" target="__blank">NocoBase</a>`,
-          { appVersion },
-        ),
-      }}
+    // className={cx(style, 'nb-brand')}
+    // dangerouslySetInnerHTML={{
+    //   __html: parseHTML(
+    //     customBrandPlugin?.options?.options?.brand ||
+    //       `Powered by <a href="${urls[i18n.language] || urls['en-US']}" target="__blank">NocoBase</a>`,
+    //     { appVersion },
+    //   ),
+    // }}
     ></div>
   );
 };
