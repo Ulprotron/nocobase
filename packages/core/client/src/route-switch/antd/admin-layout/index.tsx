@@ -3,7 +3,7 @@ import { useSessionStorageState } from 'ahooks';
 import { App, ConfigProvider, Divider, Layout } from 'antd';
 import { createGlobalStyle } from 'antd-style';
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Outlet, useLocation, useMatch, useNavigate, useParams } from 'react-router-dom';
+import { Link, Outlet, useLocation, useMatch, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ACLRolesCheckProvider,
   CurrentAppInfoProvider,
@@ -298,6 +298,8 @@ export const InternalAdminLayout = () => {
   const result = useSystemSettings();
   const { token } = useToken();
   const sideMenuRef = useRef<HTMLDivElement>();
+  const [searchParams] = useSearchParams();
+  const [independentPage, setIndependentPage] = useState<boolean>();
 
   const layoutHeaderCss = useMemo(() => {
     return css`
@@ -342,82 +344,92 @@ export const InternalAdminLayout = () => {
     token.colorTextHeaderMenu,
   ]);
 
+  useEffect(() => {
+    // TODO: 临时方案，后面看看能不能采用其他更好的方式
+    setIndependentPage(searchParams.get('independent-page') === 'true');
+  }, []);
+
   return (
     <Layout>
       <GlobalStyleForAdminLayout />
-      <Layout.Header className={layoutHeaderCss}>
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-          }}
-        >
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 1,
-              flex: '1 1 auto',
-              display: 'flex',
-              height: '100%',
-            }}
-          >
+      {!independentPage && (
+        <>
+          <Layout.Header className={layoutHeaderCss}>
             <div
-              className={css`
-                width: 200px;
-                display: inline-flex;
-                flex-shrink: 0;
-                color: #fff;
-                padding: 0;
-                align-items: center;
-              `}
-            >
-              <img
-                className={css`
-                  padding: 0 16px;
-                  object-fit: contain;
-                  width: 100%;
-                  height: 100%;
-                `}
-                src={result?.data?.data?.logo?.url}
-              />
-            </div>
-            <div
-              className={css`
-                flex: 1 1 auto;
-                width: 0;
-              `}
-            >
-              <SetThemeOfHeaderSubmenu>
-                <MenuEditor sideMenuRef={sideMenuRef} />
-              </SetThemeOfHeaderSubmenu>
-            </div>
-          </div>
-          <div
-            className={css`
-              position: relative;
-              flex-shrink: 0;
-              height: 100%;
-              z-index: 10;
-            `}
-          >
-            <PinnedPluginList />
-            <ConfigProvider
-              theme={{
-                token: {
-                  colorSplit: 'rgba(255, 255, 255, 0.1)',
-                },
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                display: 'flex',
               }}
             >
-              <Divider type="vertical" />
-            </ConfigProvider>
-            <Help />
-            <CurrentUser />
-          </div>
-        </div>
-      </Layout.Header>
-      <AdminSideBar sideMenuRef={sideMenuRef} />
+              <div
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  flex: '1 1 auto',
+                  display: 'flex',
+                  height: '100%',
+                }}
+              >
+                <div
+                  className={css`
+                    width: 200px;
+                    display: inline-flex;
+                    flex-shrink: 0;
+                    color: #fff;
+                    padding: 0;
+                    align-items: center;
+                  `}
+                >
+                  <img
+                    className={css`
+                      padding: 0 16px;
+                      object-fit: contain;
+                      width: 100%;
+                      height: 100%;
+                    `}
+                    src={result?.data?.data?.logo?.url}
+                  />
+                </div>
+                <div
+                  className={css`
+                    flex: 1 1 auto;
+                    width: 0;
+                  `}
+                >
+                  <SetThemeOfHeaderSubmenu>
+                    <MenuEditor sideMenuRef={sideMenuRef} />
+                  </SetThemeOfHeaderSubmenu>
+                </div>
+              </div>
+              <div
+                className={css`
+                  position: relative;
+                  flex-shrink: 0;
+                  height: 100%;
+                  z-index: 10;
+                `}
+              >
+                <PinnedPluginList />
+                <ConfigProvider
+                  theme={{
+                    token: {
+                      colorSplit: 'rgba(255, 255, 255, 0.1)',
+                    },
+                  }}
+                >
+                  <Divider type="vertical" />
+                </ConfigProvider>
+                <Help />
+                <CurrentUser />
+              </div>
+            </div>
+          </Layout.Header>
+          <AdminSideBar sideMenuRef={sideMenuRef} />
+        </>
+      )}
+
       <Layout.Content
         className={css`
           display: flex;
@@ -439,15 +451,18 @@ export const InternalAdminLayout = () => {
           }
         `}
       >
-        <header
-          className={css`
-            flex-shrink: 0;
-            height: var(--nb-header-height);
-            line-height: var(--nb-header-height);
-            background: transparent;
-            pointer-events: none;
-          `}
-        ></header>
+        {!independentPage && (
+          <header
+            className={css`
+              flex-shrink: 0;
+              height: var(--nb-header-height);
+              line-height: var(--nb-header-height);
+              background: transparent;
+              pointer-events: none;
+            `}
+          ></header>
+        )}
+
         <Outlet />
         {/* {service.contentLoading ? render() : <Outlet />} */}
       </Layout.Content>
