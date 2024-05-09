@@ -1,3 +1,5 @@
+
+
 import { BlockSchemaComponentPlugin, VariablesProvider } from '@nocobase/client';
 import { renderApp } from '@nocobase/test/client';
 

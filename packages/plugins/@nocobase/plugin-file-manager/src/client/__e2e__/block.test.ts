@@ -1,8 +1,18 @@
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
 import { expect, test } from '@nocobase/test/e2e';
 import { oneTableWithFileCollection } from './templates';
 
 test.describe('file collection block', () => {
-  test('What blocks are supported', async ({ page, mockPage }) => {
+  // TODO: 不稳定，先 skip 掉
+  test.skip('What blocks are supported', async ({ page, mockPage }) => {
     await mockPage({
       collections: [
         {

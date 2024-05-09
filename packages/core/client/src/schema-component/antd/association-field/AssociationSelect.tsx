@@ -1,5 +1,14 @@
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
 import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
-import { onFieldChange } from '@formily/core';
+import { onFieldInputValueChange } from '@formily/core';
 import { RecursionField, connect, mapProps, observer, useField, useFieldSchema, useForm } from '@formily/react';
 import { uid } from '@formily/shared';
 import { Space, message } from 'antd';
@@ -68,7 +77,7 @@ const InternalAssociationSelect = observer(
       const id = uid();
       form.addEffects(id, () => {
         //支持深层次子表单
-        onFieldChange('*', (fieldPath: any) => {
+        onFieldInputValueChange('*', (fieldPath: any) => {
           const linkageFields = filterAnalyses(field.componentProps?.service?.params?.filter) || [];
           if (linkageFields.includes(fieldPath?.props?.name) && field.value) {
             field.setValue(field.initialValue);

@@ -1,3 +1,12 @@
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
 import {
   Page,
   expect,
@@ -362,9 +371,11 @@ test.describe('table block schema settings', () => {
       // 初次点击，变为选中状态
       await page.getByRole('button', { name: 'Admin' }).click();
       await expect(page.getByLabel('block-item-CollectionField-').getByText('Admin')).toBeVisible();
+      // 因为只有一条数据，所以不显示分页器
+      await expect(page.getByLabel('block-item-CardItem-roles-details').locator('.ant-pagination')).toBeHidden();
       // 再次点击，取消选中状态
       await page.getByRole('button', { name: 'Admin' }).click();
-      await expect(page.getByLabel('block-item-CollectionField-').getByText('Admin')).toBeHidden();
+      await expect(page.getByLabel('block-item-CardItem-roles-details').locator('.ant-pagination')).toBeVisible();
 
       // 4. 删除详情区块，Connect data blocks 的下拉菜单应该立即消失
       await page.getByLabel('block-item-CardItem-roles-details').hover();
@@ -406,9 +417,11 @@ test.describe('table block schema settings', () => {
       // 初次点击，变为选中状态
       await page.getByRole('button', { name: 'Admin' }).click();
       await expect(page.getByLabel('block-item-CollectionField-').getByText('Admin')).toBeVisible();
+      // 因为只有一条数据，所以不显示分页器
+      await expect(page.getByLabel('block-item-CardItem-roles-details').locator('.ant-pagination')).toBeHidden();
       // 再次点击，取消选中状态
       await page.getByRole('button', { name: 'Admin' }).click();
-      await expect(page.getByLabel('block-item-CollectionField-').getByText('Admin')).toBeHidden();
+      await expect(page.getByLabel('block-item-CardItem-roles-details').locator('.ant-pagination')).toBeVisible();
 
       // 5. 删除详情区块，Connect data blocks 的下拉菜单应该立即消失
       await page.getByLabel('block-item-CardItem-roles-details').hover();

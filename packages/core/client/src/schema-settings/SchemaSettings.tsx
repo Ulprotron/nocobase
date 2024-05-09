@@ -1,3 +1,12 @@
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
 import { css } from '@emotion/css';
 import { ArrayCollapse, ArrayItems, FormItem, FormLayout, Input } from '@formily/antd-v5';
 import { Field, GeneralField, createForm } from '@formily/core';
@@ -1244,7 +1253,7 @@ export const SchemaSettingsDefaultSortingRules = function DefaultSortingRules(pr
 };
 
 export const SchemaSettingsLinkageRules = function LinkageRules(props) {
-  const { collectionName } = props;
+  const { collectionName, readPretty } = props;
   const fieldSchema = useFieldSchema();
   const { form } = useFormBlockContext();
   const { dn } = useDesignable();
@@ -1271,7 +1280,7 @@ export const SchemaSettingsLinkageRules = function LinkageRules(props) {
               defaultValues: gridSchema?.['x-linkage-rules'] || fieldSchema?.['x-linkage-rules'],
               type,
               // eslint-disable-next-line react-hooks/rules-of-hooks
-              linkageOptions: useLinkageCollectionFieldOptions(collectionName),
+              linkageOptions: useLinkageCollectionFieldOptions(collectionName, readPretty),
               collectionName,
               form,
               variables,

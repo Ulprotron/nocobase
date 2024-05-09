@@ -1,3 +1,12 @@
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
 import Topo from '@hapi/topo';
 import { CleanOptions, Collection, SyncOptions } from '@nocobase/database';
 import { importModule, isURL } from '@nocobase/utils';
@@ -298,22 +307,17 @@ export class PluginManager {
       return;
     }
     this.app.log.info('attempt to add the plugin to the app');
-    let packageName: string;
-    try {
-      packageName = await PluginManager.getPackageName(pluginName);
-    } catch (error) {
-      packageName = pluginName;
-    }
+    const { name, packageName } = await PluginManager.parseName(pluginName);
     const json = await PluginManager.getPackageJson(packageName);
     this.app.log.info(`add plugin [${packageName}]`, {
-      name: pluginName,
-      packageName: packageName,
+      name,
+      packageName,
       version: json.version,
     });
     await this.repository.updateOrCreate({
       values: {
-        name: pluginName,
-        packageName: packageName,
+        name,
+        packageName,
         version: json.version,
       },
       filterKeys: ['name'],

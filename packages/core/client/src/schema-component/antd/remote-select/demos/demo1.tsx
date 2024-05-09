@@ -1,3 +1,5 @@
+
+
 import { APIClientProvider, FormProvider, RemoteSelect, SchemaComponent } from '@nocobase/client';
 import React from 'react';
 import { mockAPIClient } from '../../../../testUtils';
@@ -23,7 +25,6 @@ mockRequest.onGet('/posts:list').reply(async () => {
   ];
 });
 
-// 写一个简单的 schema
 const schema = {
   type: 'object',
   properties: {
