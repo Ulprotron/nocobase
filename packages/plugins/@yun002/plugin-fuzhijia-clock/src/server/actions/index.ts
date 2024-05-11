@@ -1,6 +1,8 @@
 import { Context } from '@nocobase/actions';
 import axios from 'axios';
 import { createHash } from 'crypto';
+import { DataTypes, QueryTypes, Model } from 'sequelize';
+import { ClockProject, WxJsTicket, WxAccessToken, Attendance } from '../models/index';
 
 export const encrypt = (algorithm, content) => {
   const hash = createHash(algorithm);
@@ -40,46 +42,62 @@ export const getWXConfig = async (ctx: Context, next) => {
   await next();
 };
 
-export type WxAccessToken = {
-  access_token: string;
-  expires_at: Date;
-};
-
-export type WxJsTicket = {
-  ticket: string;
-  expires_at: Date;
-};
-
-export interface AMapDirectionResponse {
-  status: number;
-  info: string;
-  count: number;
-  route: [
-    {
-      origin: string;
-      destination: string;
-      paths: [
-        {
-          distance: string;
-          duration: string;
-        },
-      ];
+export const getUnClosedClockIn = async (ctx: Context, next) => {
+  // console.log('currentUser', ctx.state);
+  // const userId = ctx.state.currentUser.id;
+  const repo = ctx.db.getRepository('attendance_records');
+  const item = await repo.findOne({
+    filter: {
+      // employee_id: userId,
+      clock_out_location: null,
     },
-  ];
-}
-
-export const getProjectListByDistance = async (ctx: Context) => {
-  const { origin, destination } = ctx.action.params;
-
-  const result = await axios.request<AMapDirectionResponse>({
-    url: 'https://restapi.amap.com/v3/direction/walking',
-    method: 'get',
-    params: {
-      origin: origin,
-      destination: destination,
-      key: '7bcdde30e88feeb57fc380753b9a31d4',
-    },
+    appends: ['project'],
   });
+
+  ctx.body = item;
+  await next();
+};
+
+export const getProjectWithDistance = async (ctx: Context, next) => {
+  const { id, longitude, latitude } = ctx.query;
+  const repo = ctx.db.getRepository('projects');
+  const sequelize = repo.database.sequelize;
+  const projects = await sequelize.query<ClockProject>(
+    `SELECT id, \`name\`, ST_Distance(location, POINT(${longitude}, ${latitude})) AS distance FROM projects WHERE id=${id}`,
+    {
+      type: QueryTypes.SELECT,
+    },
+  );
+
+  ctx.body = projects.map((p) => {
+    return {
+      ...p,
+      distance: (Number(p.distance) * 111195).toFixed(1),
+    };
+  });
+
+  await next();
+};
+
+export const getProjectListByDistance = async (ctx: Context, next) => {
+  const { longitude, latitude } = ctx.query;
+  const repo = ctx.db.getRepository('projects');
+  const sequelize = repo.database.sequelize;
+  const projects = await sequelize.query<ClockProject>(
+    `SELECT id, \`name\`, ST_Distance(location, POINT(${longitude}, ${latitude})) AS distance FROM projects ORDER BY distance LIMIT 10`,
+    {
+      type: QueryTypes.SELECT,
+    },
+  );
+
+  ctx.body = projects.map((p) => {
+    return {
+      ...p,
+      distance: (Number(p.distance) * 111195).toFixed(1),
+    };
+  });
+
+  await next();
 };
 
 export const getJSTicket = async (ctx: Context) => {
