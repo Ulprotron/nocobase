@@ -90,10 +90,28 @@ export const ClockOut = (props) => {
     </button>
   );
 
-  const handleChange: UploadProps['onChange'] = ({ fileList }) => {
-    if (fileList.length === 0) return;
-    if (fileList[0].status == 'done') {
-      setFile([{ id: fileList[0].response.data.id }]);
+  const uploadImage = async (options) => {
+    const { onSuccess, onError, file } = options;
+
+    const fmData = new FormData();
+    fmData.append('file', file);
+    try {
+      const res = await apiClient.request({
+        url: 'attachments:create',
+        method: 'POST',
+        data: fmData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setFile([{ id: res.data.data.id }]);
+
+      onSuccess(file);
+      console.log('server res: ', res);
+    } catch (err) {
+      console.log('Eroor: ', err);
+      onError({ err });
     }
   };
 
@@ -140,12 +158,11 @@ export const ClockOut = (props) => {
           <div className="label">拍照（必填）</div>
           <div>
             <Upload
-              action="/api/attachments:create"
+              customRequest={uploadImage}
               listType="picture-card"
               capture="user"
               accept="image/*"
               onPreview={handlePreview}
-              onChange={handleChange}
             >
               {file.length >= 1 ? null : uploadButton}
             </Upload>

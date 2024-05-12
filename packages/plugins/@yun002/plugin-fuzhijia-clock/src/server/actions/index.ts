@@ -1,3 +1,12 @@
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
 import { Context } from '@nocobase/actions';
 import axios from 'axios';
 import { createHash } from 'crypto';
@@ -43,12 +52,11 @@ export const getWXConfig = async (ctx: Context, next) => {
 };
 
 export const getUnClosedClockIn = async (ctx: Context, next) => {
-  // console.log('currentUser', ctx.state);
-  // const userId = ctx.state.currentUser.id;
+  const userId = ctx.state.currentUser.id;
   const repo = ctx.db.getRepository('attendance_records');
   const item = await repo.findOne({
     filter: {
-      // employee_id: userId,
+      employee_id: userId,
       clock_out_location: null,
     },
     appends: ['project'],

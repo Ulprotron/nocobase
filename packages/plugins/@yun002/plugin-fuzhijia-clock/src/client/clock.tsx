@@ -7,17 +7,12 @@
  * For more information, please refer to: https://www.nocobase.com/agreement.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { css, cx, useViewport, CurrentUserProvider, useAPIClient } from '@nocobase/client';
 import { ClockIn } from './clockIn';
 import { ClockOut } from './clockOut';
-import { message } from 'antd';
 import { Attendance, ClockProject } from '../server/models';
-import AMapLoader from '@amap/amap-jsapi-loader';
-import '@amap/amap-jsapi-types';
 import './index.css';
-
-import wx from 'weixin-js-sdk';
 
 const commonCSSVariables = css`
   --nb-spacing: 14px;
@@ -66,119 +61,147 @@ export const Clock = () => {
   const [location, setLocation] = useState({ longitude: 0, latitude: 0 });
   const [projects, setProjects] = useState<ClockProject[]>([]);
 
-  useEffect(() => {
+  const myMap = useRef<any>(null);
+  const mapLayer = useRef<any>(null);
+  const mapNode = useRef<any>(null);
+
+  const mapkey = '63IBZ-CZ7C5-75BIE-I6OEX-WMXGE-KJBFQ';
+
+  let TMap: any;
+  let qq: any;
+
+  const TMapGL = (key: string): Promise<any> => {
+    return new Promise(function (resolve, reject) {
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.text = 'TMap';
+      script.src = 'https://map.qq.com/api/gljs?v=1.exp&key=' + key;
+      script.onerror = (err) => reject(err);
+      script.onload = (e) => {
+        TMap = (window as any).TMap;
+        resolve(e);
+      };
+      document.head.appendChild(script);
+    });
+  };
+
+  const TLocationGL = (): Promise<any> => {
+    return new Promise(function (resolve, reject) {
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = 'https://mapapi.qq.com/web/mapComponents/geoLocation/v/geolocation.min.js';
+      script.onerror = (err) => reject(err);
+      script.onload = (e) => {
+        qq = (window as any).qq;
+        resolve(e);
+      };
+      document.head.appendChild(script);
+    });
+  };
+
+  const initLocation = () => {
+    TLocationGL()
+      .then((res) => {
+        console.log('qq', (window as any).qq);
+        const geolocation = new qq.maps.Geolocation(mapkey, 'web-map-demo');
+        geolocation.watchPosition(getPosition);
+      })
+      .catch((err) => {
+        console.log('err', err);
+      });
+  };
+
+  const getPosition = (position: any) => {
+    myMap.current.setCenter(new TMap.LatLng(position.lat, position.lng));
+    addOnePoint({ latLng: new TMap.LatLng(position.lat, position.lng) });
+    setLocation({ longitude: position.lng, latitude: position.lat });
+
     apiClient
       .request({
-        url: 'clock:unClockOut',
+        url: 'clock:projects',
+        method: 'get',
+        params: {
+          longitude: position.lng,
+          latitude: position.lat,
+        },
       })
-      .then((data) => {
-        if (data.data) {
-          setUnClock(data.data.data);
-        }
+      .then((res) => {
+        console.log('projects', res);
+        setProjects(res.data.data);
       })
       .catch((err) => {
         throw err;
       });
-  }, []);
+  };
 
-  let map = null;
-  const accessKey = '68b03bd9484f6ccb4c55ba7dbfe181bf';
-  const securityJsCode = '404b7ebe0e5a6bc5666dfb8ae34bafa1';
-  const href = window.parent ? window.parent.location.href.split('#')[0] : window.location.href.split('#')[0];
+  const addOnePoint = (e: any) => {
+    const lat = e.latLng.getLat();
+    const lng = e.latLng.getLng();
+    //console.log("您点击的的坐标是："+ lat + "," + lng);
 
-  useEffect(() => {
-    if (!accessKey || map) return;
+    const markers = [
+      {
+        id: ((Math.random() * 100000) % 100000) + '', //点标记唯一标识，后续如果有删除、修改位置等操作，都需要此id
+        styleId: 'marker', //指定样式id
+        // "position": new TMap.LatLng(lat + Math.random() / 100, lng + Math.random() / 100),  //点标记坐标位置
+        position: e.latLng, //点标记坐标位置
+        properties: {
+          title: 'defaultMarker',
+        },
+      },
+    ];
+    mapLayer.current.add(markers);
+  };
 
-    if (securityJsCode) {
-      (window as any)._AMapSecurityConfig = {
-        securityJsCode: securityJsCode,
-      };
-    }
+  const initMap = () => {
+    //定义地图中心点坐标
+    TMapGL(mapkey)
+      .then(() => {
+        console.log('TMap', TMap);
+        const center = new TMap.LatLng(39.160001, 117.15615);
+        const myOptions = {
+          zoom: 18,
+          center,
+        };
+        const dom = mapNode.current;
+        //创建地图，绑定dom
+        //console.log('dom', dom);
 
-    const _define = (window as any).define;
-    (window as any).define = undefined;
-    AMapLoader.load({
-      key: accessKey,
-      version: '2.0',
-      plugins: ['AMap.MouseTool', 'AMap.PolygonEditor', 'AMap.PolylineEditor', 'AMap.CircleEditor', 'AMap.Geolocation'],
-    })
-      .then((amap) => {
-        (window as any).define = _define;
-        return requestIdleCallback(() => {
-          map = new amap.Map('mymap', {
-            resizeEnable: true,
-            zoom: 18,
-          } as AMap.MapOptions);
+        const map = new TMap.Map(dom, myOptions);
+        //Map实例创建后，通过on方法绑定点击事件
+        //map.on("click", onClickMap)
+        myMap.current = map;
 
-          apiClient
-            .request({
-              url: 'clock:wxconfig',
-              params: {
-                url: href,
-              },
-            })
-            .then((data) => {
-              console.log('wxconfig', data);
-              wx.config({
-                appId: data.data.data.appId,
-                timestamp: data.data.data.timestamp,
-                nonceStr: data.data.data.noncestr,
-                signature: data.data.data.signature,
-                jsApiList: ['getLocation'],
-              });
-
-              wx.ready(function () {
-                wx.getLocation({
-                  type: 'wgs84', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
-                  success: function (res) {
-                    const latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
-                    const longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
-
-                    setLocation({ longitude, latitude });
-
-                    const marker = new AMap.Marker({
-                      position: new AMap.LngLat(longitude, latitude), //经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
-                      title: '我的位置',
-                    });
-
-                    map.add(marker);
-                    map.setCenter([longitude, latitude]);
-
-                    apiClient
-                      .request({
-                        url: 'clock:projects',
-                        params: {
-                          longitude,
-                          latitude,
-                        },
-                      })
-                      .then((data) => {
-                        setProjects(data.data.data);
-                      })
-                      .catch((err) => {
-                        throw err;
-                      });
-                  },
-                });
-              });
-            })
-            .catch((err) => {
-              throw err;
-            });
+        //创建并初始化MultiMarker
+        mapLayer.current = new TMap.MultiMarker({
+          map: map, //指定地图容器
+          //样式自定义
+          styles: {
+            //创建一个styleId为"myStyle"的样式（styles的子属性名即为styleId）
+            marker: new TMap.MarkerStyle({
+              width: 25, // 点标记样式宽度（像素）
+              height: 25, // 点标记样式高度（像素）
+              src: `${process.env.PUBLIC_URL}/logo192.png`, //图片路径，不设置会使用腾讯地图默认的红标
+              //焦点在图片中的像素位置，一般大头针类似形式的图片以针尖位置做为焦点，圆形点以圆心位置为焦点
+              anchor: { x: 16, y: 32 },
+            }),
+          },
         });
+        initLocation();
       })
       .catch((err) => {
-        if (typeof err === 'string') {
-          message.error(err);
-          throw err;
-        }
+        console.log('err', err);
       });
+  };
 
+  useEffect(() => {
+    initMap();
     return () => {
-      map?.destroy();
-      map = null;
+      mapNode.current = null;
     };
-  }, [accessKey, securityJsCode]);
+  }, [mapNode]);
+
+  const href = window.parent ? window.parent.location.href.split('#')[0] : window.location.href.split('#')[0];
 
   const OnClockCompleted = () => {
     window.location.reload();
@@ -203,7 +226,7 @@ export const Clock = () => {
           `,
         )}
       >
-        <div id="mymap" style={{ width: '100%', height: '60%' }}></div>
+        <div id="mymap" style={{ width: '100%', height: '60%' }} ref={mapNode}></div>
         <div
           style={{ position: 'absolute', bottom: 0, background: '#fff', zIndex: 998, width: '100%', padding: '20px' }}
         >
