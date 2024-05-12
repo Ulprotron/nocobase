@@ -164,6 +164,7 @@ export const Clock = () => {
           center,
         };
         const dom = mapNode.current;
+        console.log('dom', dom);
         //创建地图，绑定dom
         //console.log('dom', dom);
 
@@ -198,8 +199,10 @@ export const Clock = () => {
     initMap();
     return () => {
       mapNode.current = null;
+      myMap?.current?.destroy();
+      myMap.current = null;
     };
-  }, [mapNode]);
+  }, [myMap]);
 
   const href = window.parent ? window.parent.location.href.split('#')[0] : window.location.href.split('#')[0];
 

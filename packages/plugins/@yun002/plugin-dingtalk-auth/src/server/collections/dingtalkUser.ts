@@ -1,3 +1,12 @@
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
 import { defineCollection } from '@nocobase/database';
 export interface DingtalkUserModel {
   id: bigint;
@@ -15,7 +24,7 @@ export interface DingtalkUserModel {
   work_place: string;
   org_email: string;
   dept_id_list: number[];
-  dept_order: number;
+  dept_order: bigint;
   hired_date: Date;
   active: boolean;
   admin: boolean;
@@ -41,7 +50,7 @@ export default defineCollection({
     { type: 'string', name: 'work_place', title: '' },
     { type: 'string', name: 'org_email', title: '' },
     { type: 'string', name: 'dept_id_list', title: '' },
-    { type: 'integer', name: 'dept_order', title: '' },
+    { type: 'bigInt', name: 'dept_order', title: '' },
     { type: 'date', name: 'hired_date', title: '' },
     { type: 'boolean', name: 'active', title: '' },
     { type: 'boolean', name: 'admin', title: '' },

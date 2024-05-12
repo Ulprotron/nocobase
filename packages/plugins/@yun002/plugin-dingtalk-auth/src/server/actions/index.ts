@@ -1,6 +1,6 @@
 import { Context, DEFAULT_PAGE, DEFAULT_PER_PAGE, Next } from '@nocobase/actions';
 import axios, { AxiosRequestConfig } from 'axios';
-import dingtalkSetting, { DingtalkSettingModel } from '../server/collections/dingtalkSetting';
+import dingtalkSetting, { DingtalkSettingModel } from '../collections/dingtalkSetting';
 
 interface DingtalkAccessToken {
   accessToken: string;
@@ -21,6 +21,20 @@ interface DeptBase {
   parent_id: number;
   create_dept_group: boolean;
   auto_add_user: boolean;
+}
+
+interface UserInfoResponse extends DingtalkReponse {
+  result: UserGetByCodeResponse;
+}
+
+interface UserGetByCodeResponse {
+  userid: string;
+  device_id: string;
+  sys: boolean;
+  sys_level: boolean;
+  associated_unionid: string;
+  unionid: string;
+  name: string;
 }
 
 // 部门用户请求体包装对象
@@ -96,9 +110,11 @@ const getAccessToken = async (ctx: Context, corpId: string, key?: string, secret
     },
   });
 
+  console.log('accesstoken-res', res);
+
   const accessToken = {
     accessToken: res.data.accessToken,
-    expiresAt: new Date(Date.now() + res.data.expiresIn * 1000),
+    expiresAt: new Date(Date.now() + res.data.expireIn * 1000),
     corpId: corpId,
   };
 
@@ -197,4 +213,34 @@ export const syncUsers = async (ctx: Context, next) => {
   });
 
   await next();
+};
+
+export const getUserByCode = async (ctx: Context, auth_code: string) => {
+  const corpId = 'dinged63d72e86ece67035c2f4657eb6378f';
+  const accessToken = await getAccessToken(ctx, corpId);
+
+  const res = await axios.request<UserInfoResponse>({
+    url: `https://oapi.dingtalk.com/topapi/v2/user/getuserinfo?access_token=${accessToken.accessToken}`,
+    method: 'POST',
+    params: {
+      code: auth_code,
+    },
+  });
+
+  console.log('getUserByCode', res.data);
+  const repo = ctx.db.getRepository('DingtalkUser');
+  const record = await repo.findOne({
+    filter: {
+      userid: res.data.result.userid,
+    },
+  });
+
+  if (record == null) return null;
+
+  const { mobile, email } = record.dataValues;
+
+  return {
+    phone: mobile,
+    email,
+  };
 };

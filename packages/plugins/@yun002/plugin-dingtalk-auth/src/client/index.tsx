@@ -1,3 +1,12 @@
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
 import { Plugin } from '@nocobase/client';
 import { DingtalkSetting } from './dingTalkSetting';
 import AuthPlugin from '@nocobase/plugin-auth/client';
@@ -25,7 +34,7 @@ export class PluginDingtalkAuthClient extends Plugin {
     const auth = this.app.pm.get(AuthPlugin);
     auth.registerType(authType, {
       components: {
-        SignInForm: DingtalkSignin, // 登录表单
+        SignInButton: DingtalkSignin,
       },
     });
 

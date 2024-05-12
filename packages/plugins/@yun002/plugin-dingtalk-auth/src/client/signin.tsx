@@ -1,21 +1,48 @@
-import { constraintsProps, useApp } from '@nocobase/client';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Card, message, Button } from 'antd';
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
+import { constraintsProps, useApp, useAPIClient, useCurrentUserContext } from '@nocobase/client';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { Card, message, Button, Form } from 'antd';
 import * as dd from 'dingtalk-jsapi';
-import { Authenticator } from '@nocobase/plugin-auth/client';
-import { initDingH5RemoteDebug } from 'dingtalk-h5-remote-debug';
+import { Authenticator, useSignIn } from '@nocobase/plugin-auth/client';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { DingtalkCircleFilled } from '@ant-design/icons';
+
+export function useRedirect(next = '/admin') {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  return useCallback(() => {
+    navigate(searchParams.get('redirect') || '/admin', { replace: true });
+  }, [navigate, searchParams]);
+}
 
 export const DingtalkSignin = (props: { authenticator: Authenticator }) => {
-  initDingH5RemoteDebug();
-
-  const [authCode, setAuthCodce] = useState('');
+  const { name, options } = props.authenticator;
+  const apiClient = useAPIClient();
+  const redirect = useRedirect();
+  const { refreshAsync } = useCurrentUserContext();
 
   const onSignIn = () => {
     dd.getAuthCode({
       corpId: 'dinged63d72e86ece67035c2f4657eb6378f',
       success: (res) => {
         const { code } = res;
-        message.success(code);
+        apiClient.auth
+          .signIn({ code }, name)
+          .then(() => {
+            refreshAsync();
+            redirect();
+          })
+          .catch((err) => {
+            throw err;
+          });
       },
       fail: () => {},
       complete: () => {},
@@ -23,10 +50,8 @@ export const DingtalkSignin = (props: { authenticator: Authenticator }) => {
   };
 
   return (
-    <Card title="钉钉登录">
-      {' '}
-      {authCode}
-      <Button onClick={onSignIn}>钉钉登录</Button>
-    </Card>
+    <Button onClick={onSignIn} icon={<DingtalkCircleFilled color="#01A0FF" />} block>
+      钉钉登录
+    </Button>
   );
 };

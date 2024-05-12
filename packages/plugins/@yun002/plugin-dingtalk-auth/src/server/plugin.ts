@@ -1,6 +1,15 @@
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
 import { Plugin } from '@nocobase/server';
 import { resolve } from 'path';
-import { enable, syncUsers } from '../actions/index';
+import { enable, syncUsers } from './actions/index';
 import { authType } from '../constants';
 import { DingtalkAuth } from './dingtalk-auth';
 
@@ -10,20 +19,8 @@ export class PluginDingtalkAuthServer extends Plugin {
   async beforeLoad() {}
 
   async load() {
-    const repo = this.db.getRepository('DingtalkSetting');
-    const setting = await repo.findById(1);
-    console.log('dingtalksetting', setting);
-
-    if (!setting) {
-      await repo.create({
-        values: {
-          id: 1,
-          enabled: false,
-        },
-      });
-    }
-
     await this.importCollections(resolve(__dirname, 'collections'));
+
     this.db.addMigrations({
       namespace: 'yun002',
       directory: resolve(__dirname, 'migrations'),
@@ -50,7 +47,20 @@ export class PluginDingtalkAuthServer extends Plugin {
 
   async install() {}
 
-  async afterEnable() {}
+  async afterEnable() {
+    const repo = this.db.getRepository('DingtalkSetting');
+    const setting = await repo.findById(1);
+    console.log('dingtalksetting', setting);
+
+    if (!setting) {
+      await repo.create({
+        values: {
+          id: 1,
+          enabled: false,
+        },
+      });
+    }
+  }
 
   async afterDisable() {}
   async remove() {}
