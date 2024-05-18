@@ -17,6 +17,18 @@ export type WxJsTicket = {
   expires_at: Date;
 };
 
+export type ClockPicture = {
+  id: number;
+};
+
+export type ClockInRequest = {
+  clock_in_picture: ClockPicture[];
+  project_id: number;
+  clock_in_time: Date;
+  clock_in_distance: number;
+  clock_in_location: [number, number];
+};
+
 export type ClockProject = {
   id: number;
   name: string;

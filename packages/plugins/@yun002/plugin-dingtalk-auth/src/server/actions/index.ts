@@ -1,6 +1,16 @@
+/**
+ * This file is part of the NocoBase (R) project.
+ * Copyright (c) 2020-2024 NocoBase Co., Ltd.
+ * Authors: NocoBase Team.
+ *
+ * This project is dual-licensed under AGPL-3.0 and NocoBase Commercial License.
+ * For more information, please refer to: https://www.nocobase.com/agreement.
+ */
+
 import { Context, DEFAULT_PAGE, DEFAULT_PER_PAGE, Next } from '@nocobase/actions';
 import axios, { AxiosRequestConfig } from 'axios';
 import dingtalkSetting, { DingtalkSettingModel } from '../collections/dingtalkSetting';
+import { PluginManager } from '@nocobase/server';
 
 interface DingtalkAccessToken {
   accessToken: string;
@@ -122,6 +132,25 @@ const getAccessToken = async (ctx: Context, corpId: string, key?: string, secret
   return accessToken;
 };
 
+const getCorpId = async (ctx: Context) => {
+  const corpId = await ctx.cache.get<string>('dingtalk:corpId');
+  if (corpId) return corpId;
+
+  const repo = ctx.db.getRepository('DingtalkSetting');
+  const model = await repo.findOne({
+    filter: {
+      id: 1,
+    },
+  });
+
+  const setting = model.dataValues as DingtalkSettingModel;
+  console.log('setting', setting);
+  if (setting == null || !setting.enabled) throw Error('未配置钉钉集成');
+
+  await ctx.cache.set('dingtalk:corpId', setting.corpId);
+  return setting.corpId;
+};
+
 export const enable = async (ctx: Context, next) => {
   const values = ctx.action.params.values;
   const accessToken = await getAccessToken(ctx, values.corpId, values.key, values.secret);
@@ -141,13 +170,43 @@ export const enable = async (ctx: Context, next) => {
     },
   });
 
+  await ctx.cache.set('dingtalk:corpId', values.corpId);
   await next();
 };
 
+const SyncDepts = async (ctx: Context, depts: DeptBase[]) => {
+  const deptRepo = ctx.db.getRepository('departments');
+  depts.forEach(async (dept) => {
+    const record = await deptRepo.findOne({
+      filter: {
+        id: dept.dept_id,
+      },
+    });
+
+    if (record == null) {
+      await deptRepo.create({
+        values: {
+          ...dept,
+        },
+      });
+    } else {
+      await deptRepo.update({
+        values: {
+          ...dept,
+        },
+        filter: {
+          dept_id: dept.dept_id,
+        },
+      });
+    }
+  });
+};
+
 export const syncUsers = async (ctx: Context, next) => {
-  // const corpId = ctx.state.dcorpid;
-  const corpId = 'dinged63d72e86ece67035c2f4657eb6378f';
+  const corpId = await getCorpId(ctx);
   const accessToken = await getAccessToken(ctx, corpId);
+  const pm = ctx.app.pm as PluginManager;
+  const departmentPlugin = pm.get('departments');
 
   const res = await axios.request<DeptBaseResponse>({
     url: `https://oapi.dingtalk.com/topapi/v2/department/listsub?access_token=${accessToken.accessToken}`,
@@ -216,7 +275,7 @@ export const syncUsers = async (ctx: Context, next) => {
 };
 
 export const getUserByCode = async (ctx: Context, auth_code: string) => {
-  const corpId = 'dinged63d72e86ece67035c2f4657eb6378f';
+  const corpId = await getCorpId(ctx);
   const accessToken = await getAccessToken(ctx, corpId);
 
   const res = await axios.request<UserInfoResponse>({

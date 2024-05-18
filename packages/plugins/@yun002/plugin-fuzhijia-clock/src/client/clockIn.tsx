@@ -11,9 +11,9 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Form, Button } from 'antd';
 import { CameraOutlined, DownOutlined } from '@ant-design/icons';
 import { UploadFile, UploadProps, Image, message, Flex, Drawer } from 'antd';
-import { useAPIClient, useRequest } from '@nocobase/client';
+import { useAPIClient, useRequest, useCurrentUserContext } from '@nocobase/client';
 import { getBase64, FileType } from './utils';
-import { ClockProject } from '../server/models';
+import { ClockInRequest, ClockProject, ClockPicture } from '../server/models';
 
 export interface WxConfig {
   appId: string;
@@ -33,6 +33,8 @@ export const ClockIn = (props) => {
   const [errMessage, setErrMessage] = useState<string | null>(null);
   const [loadMapMessage, setLoadMapMessage] = useState<string | null>(null);
   const [drawOpen, setDrawOpen] = useState(false);
+  const context = useCurrentUserContext();
+  context?.data?.data?.id;
 
   useEffect(() => {
     setSelectedProject(projects ? projects[0] : null);
@@ -71,8 +73,8 @@ export const ClockIn = (props) => {
       return;
     }
 
-    const args = {
-      clock_in_picture: file,
+    const args: ClockInRequest = {
+      clock_in_picture: file as ClockPicture[],
       project_id: selectedProject.id,
       clock_in_time: new Date(),
       clock_in_distance: selectedProject.distance,
@@ -81,7 +83,7 @@ export const ClockIn = (props) => {
 
     apiClient
       .request({
-        url: 'attendance_records:create',
+        url: 'clock:clockIn',
         method: 'POST',
         data: args,
       })
@@ -99,6 +101,11 @@ export const ClockIn = (props) => {
 
   const onClose = () => {
     setDrawOpen(false);
+  };
+
+  const onRemove = (file) => {
+    setFile([]);
+    return true;
   };
 
   const uploadImage = async (options) => {
@@ -160,6 +167,7 @@ export const ClockIn = (props) => {
               listType="picture-card"
               capture="user"
               accept="image/*"
+              onRemove={onRemove}
               onPreview={handlePreview}
             >
               {file.length >= 1 ? null : uploadButton}

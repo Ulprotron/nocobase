@@ -7,7 +7,7 @@
  * For more information, please refer to: https://www.nocobase.com/agreement.
  */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, memo } from 'react';
 import { css, cx, useViewport, CurrentUserProvider, useAPIClient } from '@nocobase/client';
 import { ClockIn } from './clockIn';
 import { ClockOut } from './clockOut';
@@ -55,7 +55,7 @@ const commonDesignerCSS = css`
   }
 `;
 
-export const Clock = () => {
+export const Clock = memo(() => {
   const apiClient = useAPIClient();
   const [unClock, setUnClock] = useState<Attendance | null>(null);
   const [location, setLocation] = useState({ longitude: 0, latitude: 0 });
@@ -63,7 +63,7 @@ export const Clock = () => {
 
   const myMap = useRef<any>(null);
   const mapLayer = useRef<any>(null);
-  const mapNode = useRef<any>(null);
+  const mapNode = useRef<any>();
 
   const mapkey = '63IBZ-CZ7C5-75BIE-I6OEX-WMXGE-KJBFQ';
 
@@ -102,7 +102,6 @@ export const Clock = () => {
   const initLocation = () => {
     TLocationGL()
       .then((res) => {
-        console.log('qq', (window as any).qq);
         const geolocation = new qq.maps.Geolocation(mapkey, 'web-map-demo');
         geolocation.watchPosition(getPosition);
       })
@@ -126,7 +125,6 @@ export const Clock = () => {
         },
       })
       .then((res) => {
-        console.log('projects', res);
         setProjects(res.data.data);
       })
       .catch((err) => {
@@ -137,13 +135,12 @@ export const Clock = () => {
   const addOnePoint = (e: any) => {
     const lat = e.latLng.getLat();
     const lng = e.latLng.getLng();
-    //console.log("您点击的的坐标是："+ lat + "," + lng);
+    console.log('您点击的的坐标是：' + lat + ',' + lng);
 
     const markers = [
       {
         id: ((Math.random() * 100000) % 100000) + '', //点标记唯一标识，后续如果有删除、修改位置等操作，都需要此id
         styleId: 'marker', //指定样式id
-        // "position": new TMap.LatLng(lat + Math.random() / 100, lng + Math.random() / 100),  //点标记坐标位置
         position: e.latLng, //点标记坐标位置
         properties: {
           title: 'defaultMarker',
@@ -157,14 +154,13 @@ export const Clock = () => {
     //定义地图中心点坐标
     TMapGL(mapkey)
       .then(() => {
-        console.log('TMap', TMap);
         const center = new TMap.LatLng(39.160001, 117.15615);
         const myOptions = {
           zoom: 18,
           center,
         };
+
         const dom = mapNode.current;
-        console.log('dom', dom);
         //创建地图，绑定dom
         //console.log('dom', dom);
 
@@ -182,8 +178,6 @@ export const Clock = () => {
             marker: new TMap.MarkerStyle({
               width: 25, // 点标记样式宽度（像素）
               height: 25, // 点标记样式高度（像素）
-              src: `${process.env.PUBLIC_URL}/logo192.png`, //图片路径，不设置会使用腾讯地图默认的红标
-              //焦点在图片中的像素位置，一般大头针类似形式的图片以针尖位置做为焦点，圆形点以圆心位置为焦点
               anchor: { x: 16, y: 32 },
             }),
           },
@@ -196,13 +190,26 @@ export const Clock = () => {
   };
 
   useEffect(() => {
+    apiClient
+      .request({
+        url: 'clock:unClockOut',
+      })
+      .then((data) => {
+        if (data.data) {
+          setUnClock(data.data.data);
+        }
+      })
+      .catch((err) => {
+        throw err;
+      });
+
     initMap();
     return () => {
       mapNode.current = null;
       myMap?.current?.destroy();
       myMap.current = null;
     };
-  }, [myMap]);
+  }, []);
 
   const href = window.parent ? window.parent.location.href.split('#')[0] : window.location.href.split('#')[0];
 
@@ -212,32 +219,30 @@ export const Clock = () => {
 
   useViewport();
   return (
-    <CurrentUserProvider>
+    <div
+      className={cx(
+        'nb-mobile-application',
+        commonDesignerCSS,
+        commonCSSVariables,
+        commonCSSOverride,
+        css`
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          height: 100%;
+          position: relative;
+          overflow: hidden;
+        `,
+      )}
+    >
+      <div id="mymap" style={{ width: '100%', height: '60%' }} ref={mapNode}></div>
       <div
-        className={cx(
-          'nb-mobile-application',
-          commonDesignerCSS,
-          commonCSSVariables,
-          commonCSSOverride,
-          css`
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-            position: relative;
-            overflow: hidden;
-          `,
-        )}
+        style={{ position: 'absolute', bottom: 0, background: '#fff', zIndex: 1001, width: '100%', padding: '20px' }}
       >
-        <div id="mymap" style={{ width: '100%', height: '60%' }} ref={mapNode}></div>
-        <div
-          style={{ position: 'absolute', bottom: 0, background: '#fff', zIndex: 998, width: '100%', padding: '20px' }}
-        >
-          {unClock && <ClockOut clockIn={unClock} location={location} OnClockCompleted={OnClockCompleted}></ClockOut>}
+        {unClock && <ClockOut clockIn={unClock} location={location} OnClockCompleted={OnClockCompleted}></ClockOut>}
 
-          {!unClock && <ClockIn location={location} projects={projects} OnClockCompleted={OnClockCompleted}></ClockIn>}
-        </div>
+        {!unClock && <ClockIn location={location} projects={projects} OnClockCompleted={OnClockCompleted}></ClockIn>}
       </div>
-    </CurrentUserProvider>
+    </div>
   );
-};
+});

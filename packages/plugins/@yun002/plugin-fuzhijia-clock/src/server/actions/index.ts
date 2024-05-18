@@ -11,12 +11,47 @@ import { Context } from '@nocobase/actions';
 import axios from 'axios';
 import { createHash } from 'crypto';
 import { DataTypes, QueryTypes, Model } from 'sequelize';
-import { ClockProject, WxJsTicket, WxAccessToken, Attendance } from '../models/index';
+import { ClockProject, WxJsTicket, WxAccessToken, Attendance, ClockInRequest } from '../models/index';
 
 export const encrypt = (algorithm, content) => {
   const hash = createHash(algorithm);
   hash.update(content);
   return hash.digest('hex');
+};
+
+export const clockIn = async (ctx: Context, next) => {
+  console.log('clock in request', ctx.request.body);
+  const { project_id, clock_in_picture, clock_in_distance, clock_in_location } = ctx.request.body as ClockInRequest;
+
+  const userId = ctx.state.currentUser.id;
+  const employeeRepo = ctx.db.getRepository('employees');
+  const employee = await employeeRepo.findOne({
+    filter: {
+      user_id: userId,
+    },
+  });
+
+  if (!employee) {
+    throw new Error('employee not found');
+  }
+
+  console.log('clock in user', ctx.state.currentUser);
+  console.log('clock in employee', employee);
+  const repo = ctx.db.getRepository('attendance_records');
+  const item = await repo.create({
+    values: {
+      employee_id: employee.dataValues.id,
+      record_project_id: project_id,
+      clock_in_time: new Date(),
+      date: new Date(),
+      clock_in_picture,
+      clock_in_distance,
+      clock_in_location,
+    },
+  });
+
+  ctx.body = item;
+  await next();
 };
 
 export const getWXConfig = async (ctx: Context, next) => {
@@ -53,10 +88,23 @@ export const getWXConfig = async (ctx: Context, next) => {
 
 export const getUnClosedClockIn = async (ctx: Context, next) => {
   const userId = ctx.state.currentUser.id;
+  const employeeRepo = ctx.db.getRepository('employees');
   const repo = ctx.db.getRepository('attendance_records');
+  const employee = await employeeRepo.findOne({
+    filter: {
+      user_id: userId,
+    },
+  });
+
+  if (!employee) {
+    throw new Error('employee not found');
+  }
+
+  console.log('clock in employee', employee);
+
   const item = await repo.findOne({
     filter: {
-      employee_id: userId,
+      employee_id: employee.dataValues.id,
       clock_out_location: null,
     },
     appends: ['project'],

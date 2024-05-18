@@ -32,7 +32,7 @@ export const ClockOut = (props) => {
           url: 'clock:distance',
           method: 'get',
           params: {
-            id: clockIn.project_id,
+            id: clockIn.record_project_id,
             longitude: location.longitude,
             latitude: location.latitude,
           },
@@ -54,6 +54,11 @@ export const ClockOut = (props) => {
 
     setPreviewImage(file.url || (file.preview as string));
     setPreviewOpen(true);
+  };
+
+  const onRemove = (file) => {
+    setFile([]);
+    return true;
   };
 
   const onSubmit = (values) => {
@@ -162,6 +167,7 @@ export const ClockOut = (props) => {
               listType="picture-card"
               capture="user"
               accept="image/*"
+              onRemove={onRemove}
               onPreview={handlePreview}
             >
               {file.length >= 1 ? null : uploadButton}

@@ -1,6 +1,6 @@
 {
   "name": "@yun002/plugin-fuzhijia-clock",
-  "version": "1.0.0-alpha.10",
+  "version": "1.0.0-alpha.16",
   "main": "dist/server/index.js",
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",

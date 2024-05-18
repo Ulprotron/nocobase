@@ -8,7 +8,13 @@
  */
 
 import { Plugin } from '@nocobase/server';
-import { getWXConfig, getProjectListByDistance, getUnClosedClockIn, getProjectWithDistance } from './actions/index';
+import {
+  getWXConfig,
+  getProjectListByDistance,
+  getUnClosedClockIn,
+  getProjectWithDistance,
+  clockIn,
+} from './actions/index';
 
 export class PluginFuzhijiaClockServer extends Plugin {
   async afterAdd() {}
@@ -23,12 +29,14 @@ export class PluginFuzhijiaClockServer extends Plugin {
         projects: getProjectListByDistance,
         unClockOut: getUnClosedClockIn,
         distance: getProjectWithDistance,
+        clockIn: clockIn,
       },
     });
 
     this.app.acl.allow('attendance_records', '*', 'public');
     this.app.acl.allow('clock', '*', 'public');
     this.app.acl.allow('attachments', '*', 'public');
+    this.app.acl.allow('employees', '*', 'public');
   }
 
   async install() {}
