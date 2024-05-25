@@ -1,6 +1,6 @@
 {
   "name": "@yun002/plugin-dingtalk-auth",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.5",
   "main": "dist/server/index.js",
   "dependencies": {
     "dingtalk-h5-remote-debug": "^0.1.3",

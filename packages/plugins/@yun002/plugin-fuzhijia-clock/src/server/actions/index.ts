@@ -12,6 +12,7 @@ import axios from 'axios';
 import { createHash } from 'crypto';
 import { DataTypes, QueryTypes, Model } from 'sequelize';
 import { ClockProject, WxJsTicket, WxAccessToken, Attendance, ClockInRequest } from '../models/index';
+import { BaiduApi } from './baiduApi';
 
 export const encrypt = (algorithm, content) => {
   const hash = createHash(algorithm);
@@ -179,6 +180,12 @@ export const getJSTicket = async (ctx: Context) => {
     await ctx.cache.set('weixin:jsticket', ticket);
     return ticket;
   }
+};
+
+export const faceMatch = async (ctx: Context, next) => {
+  const result = await BaiduApi.faceMatch(ctx);
+  ctx.body = result;
+  await next();
 };
 
 export const getWxAccessToken = async (ctx: Context) => {

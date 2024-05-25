@@ -28,6 +28,7 @@ interface DingtalkReponse {
 interface DeptBase {
   dept_id: number;
   name: string;
+  isLeaf: number;
   parent_id: number;
   create_dept_group: boolean;
   auto_add_user: boolean;
@@ -60,6 +61,7 @@ interface DeptUserPageResult {
 
 // 部门用户信息
 interface UserInfo {
+  appUserId: number;
   name: string;
   userid: string;
   unionid: string;
@@ -73,7 +75,7 @@ interface UserInfo {
   remark: string;
   work_place: string;
   org_email: string;
-  dept_id_list: string;
+  dept_id_list: number[];
   dept_order: number;
   hired_date: Date;
   active: boolean;
@@ -120,8 +122,6 @@ const getAccessToken = async (ctx: Context, corpId: string, key?: string, secret
     },
   });
 
-  console.log('accesstoken-res', res);
-
   const accessToken = {
     accessToken: res.data.accessToken,
     expiresAt: new Date(Date.now() + res.data.expireIn * 1000),
@@ -151,6 +151,14 @@ const getCorpId = async (ctx: Context) => {
   return setting.corpId;
 };
 
+export const getCorpIdRequest = async (ctx: Context, next) => {
+  const corpId = await getCorpId(ctx);
+  ctx.body = {
+    corpId,
+  };
+  await next();
+};
+
 export const enable = async (ctx: Context, next) => {
   const values = ctx.action.params.values;
   const accessToken = await getAccessToken(ctx, values.corpId, values.key, values.secret);
@@ -174,7 +182,42 @@ export const enable = async (ctx: Context, next) => {
   await next();
 };
 
-const SyncDepts = async (ctx: Context, depts: DeptBase[]) => {
+const getChildDepts = async (ctx: Context, parentId: number, depts: DeptBase[]) => {
+  console.log('start geting child depts of', parentId);
+
+  const corpId = await getCorpId(ctx);
+  const accessToken = await getAccessToken(ctx, corpId);
+
+  const res = await axios.request<DeptBaseResponse>({
+    url: `https://oapi.dingtalk.com/topapi/v2/department/listsub?access_token=${accessToken.accessToken}`,
+    method: 'POST',
+    data: {
+      dept_id: parentId,
+    },
+  });
+
+  if (res.data.errcode != 0) {
+    throw new Error(`请求部门列表失败：${res.data.errcode} - ${res.data.errmsg}`);
+  }
+
+  if (res.data.result.length == 0) return [];
+
+  for (const dept of res.data.result) {
+    depts.push(dept);
+    const children = await getChildDepts(ctx, dept.dept_id, depts);
+    dept.parent_id = dept.parent_id == 1 ? null : dept.parent_id;
+    dept.isLeaf = children.length == 0 ? 1 : 0;
+    //depts.push(...children);
+  }
+
+  return depts;
+};
+
+const syncDepts = async (ctx: Context, depts: DeptBase[]) => {
+  const pm = ctx.app.pm as PluginManager;
+  const departmentPlugin = pm.get('departments');
+  if (departmentPlugin == null) return;
+
   const deptRepo = ctx.db.getRepository('departments');
   depts.forEach(async (dept) => {
     const record = await deptRepo.findOne({
@@ -186,43 +229,117 @@ const SyncDepts = async (ctx: Context, depts: DeptBase[]) => {
     if (record == null) {
       await deptRepo.create({
         values: {
-          ...dept,
+          id: dept.dept_id,
+          title: dept.name,
+          parentId: dept.parent_id,
+          isLeaf: dept.isLeaf,
         },
       });
     } else {
       await deptRepo.update({
         values: {
-          ...dept,
+          title: dept.name,
+          parentId: dept.parent_id,
+          isLeaf: dept.isLeaf,
         },
         filter: {
-          dept_id: dept.dept_id,
+          id: dept.dept_id,
         },
       });
     }
   });
 };
 
+const createOrUpdateUser = async (ctx: Context, user: UserInfo) => {
+  const repo = ctx.db.getRepository('DingtalkUser');
+  const userRepo = ctx.db.getRepository('users');
+  const deptUserRepo = ctx.db.getRepository('departmentsUsers');
+
+  // app user
+  let appUser = await userRepo.findOne({
+    filter: {
+      $or: [{ phone: user.mobile }, { email: user.email }],
+    },
+  });
+
+  if (appUser == null) {
+    appUser = await userRepo.create({
+      values: {
+        phone: user.mobile,
+        email: user.org_email,
+        nickname: user.name,
+        username: user.userid,
+        password: user.mobile,
+      },
+    });
+  } else {
+    await userRepo.update({
+      values: {
+        phone: user.mobile,
+        email: user.org_email,
+        nickname: user.name,
+        name: user.userid,
+      },
+      filter: {
+        id: appUser.dataValues.id,
+      },
+    });
+  }
+
+  // dept user
+  if (user.dept_id_list) {
+    const userDeptIds = user.dept_id_list.filter((deptId) => deptId != 1);
+    const userDepts = userDeptIds.map((deptId) => {
+      return { departmentId: deptId, userId: appUser.dataValues.id, isOwner: user.admin };
+    });
+
+    deptUserRepo.destroy({ filter: { userId: appUser.dataValues.id } });
+    deptUserRepo.createMany({ records: userDepts });
+  }
+
+  // dingtalk user
+  const record = await repo.findOne({
+    filter: {
+      userid: user.userid,
+    },
+  });
+
+  if (record == null) {
+    await repo.create({
+      values: {
+        ...user,
+        appuserId: appUser.dataValues.id,
+        dept_id_list: JSON.stringify(user.dept_id_list),
+      },
+    });
+  } else {
+    await repo.update({
+      values: {
+        ...user,
+        appUserId: appUser.dataValues.id,
+        dept_id_list: JSON.stringify(user.dept_id_list),
+      },
+      filter: {
+        userid: user.userid,
+      },
+    });
+  }
+};
+
 export const syncUsers = async (ctx: Context, next) => {
   const corpId = await getCorpId(ctx);
   const accessToken = await getAccessToken(ctx, corpId);
-  const pm = ctx.app.pm as PluginManager;
-  const departmentPlugin = pm.get('departments');
+  const depts = new Array<DeptBase>();
+  await getChildDepts(ctx, 1, depts);
+  await syncDepts(ctx, depts);
 
-  const res = await axios.request<DeptBaseResponse>({
-    url: `https://oapi.dingtalk.com/topapi/v2/department/listsub?access_token=${accessToken.accessToken}`,
-    method: 'POST',
-  });
-
-  if (res.data.errcode != 0) {
-    throw new Error(`请求部门列表失败：${res.data.errcode} - ${res.data.errmsg}`);
-  }
-
-  const depts = [
-    ...res.data.result,
+  // sync
+  const allDepts = [
+    ...depts,
     { dept_id: 1, name: '根部门', parent_id: 0, create_dept_group: false, auto_add_user: false },
   ];
 
-  depts.forEach(async (dept) => {
+  allDepts.forEach(async (dept) => {
     let next_cursor = 0;
     let has_more = true;
 
@@ -238,33 +355,9 @@ export const syncUsers = async (ctx: Context, next) => {
         },
       });
 
-      res.data.result.list.forEach(async (user) => {
-        const repo = ctx.db.getRepository('DingtalkUser');
-        const record = await repo.findOne({
-          filter: {
-            userid: user.userid,
-          },
-        });
-
-        if (record == null) {
-          await repo.create({
-            values: {
-              ...user,
-              dept_id_list: JSON.stringify(user.dept_id_list),
-            },
-          });
-        } else {
-          await repo.update({
-            values: {
-              ...user,
-              dept_id_list: JSON.stringify(user.dept_id_list),
-            },
-            filter: {
-              userid: user.userid,
-            },
-          });
-        }
-      });
+      for (const user of res.data.result.list) {
+        await createOrUpdateUser(ctx, user);
+      }
 
       has_more = res.data.result.has_more;
       next_cursor = res.data.result.next_cursor;

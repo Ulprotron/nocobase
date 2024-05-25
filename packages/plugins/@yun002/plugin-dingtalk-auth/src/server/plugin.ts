@@ -9,7 +9,7 @@
 
 import { Plugin } from '@nocobase/server';
 import { resolve } from 'path';
-import { enable, syncUsers } from './actions/index';
+import { enable, syncUsers, getCorpIdRequest } from './actions/index';
 import { authType } from '../constants';
 import { DingtalkAuth } from './dingtalk-auth';
 
@@ -22,7 +22,7 @@ export class PluginDingtalkAuthServer extends Plugin {
     await this.importCollections(resolve(__dirname, 'collections'));
 
     this.db.addMigrations({
-      namespace: 'yun002',
+      namespace: 'dingtalk',
       directory: resolve(__dirname, 'migrations'),
       context: {
         plugin: this,
@@ -34,6 +34,7 @@ export class PluginDingtalkAuthServer extends Plugin {
       actions: {
         enable: enable,
         sync: syncUsers,
+        getCorpId: getCorpIdRequest,
       },
     });
 

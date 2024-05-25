@@ -14,6 +14,7 @@ import {
   getUnClosedClockIn,
   getProjectWithDistance,
   clockIn,
+  faceMatch,
 } from './actions/index';
 
 export class PluginFuzhijiaClockServer extends Plugin {
@@ -30,6 +31,7 @@ export class PluginFuzhijiaClockServer extends Plugin {
         unClockOut: getUnClosedClockIn,
         distance: getProjectWithDistance,
         clockIn: clockIn,
+        match: faceMatch,
       },
     });
 

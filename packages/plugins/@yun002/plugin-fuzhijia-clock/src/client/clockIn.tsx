@@ -9,11 +9,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Upload, Form, Button } from 'antd';
-import { CameraOutlined, DownOutlined } from '@ant-design/icons';
+import { CameraOutlined, DownOutlined, CheckCircleFilled, CloseCircleFilled } from '@ant-design/icons';
 import { UploadFile, UploadProps, Image, message, Flex, Drawer } from 'antd';
 import { useAPIClient, useRequest, useCurrentUserContext } from '@nocobase/client';
 import { getBase64, FileType } from './utils';
 import { ClockInRequest, ClockProject, ClockPicture } from '../server/models';
+import { Buffer } from 'buffer';
 
 export interface WxConfig {
   appId: string;
@@ -24,8 +25,7 @@ export interface WxConfig {
 }
 
 export const ClockIn = (props) => {
-  console.log('props', props);
-  const { location, projects, onClock } = props;
+  const { location, projects, onClock, setSpinning } = props;
   const [selectedProject, setSelectedProject] = useState<ClockProject | null>(projects ? projects[0] : null);
   const [file, setFile] = useState([]);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -34,13 +34,48 @@ export const ClockIn = (props) => {
   const [loadMapMessage, setLoadMapMessage] = useState<string | null>(null);
   const [drawOpen, setDrawOpen] = useState(false);
   const context = useCurrentUserContext();
-  context?.data?.data?.id;
+  const [submitEnable, setSubmitEnable] = useState(true);
+  const [profile_pciture, setProfile_pciture] = useState<string | null>(null);
+  const [faceMatchCheck, setFaceMatchCheck] = useState<boolean>(null);
 
   useEffect(() => {
     setSelectedProject(projects ? projects[0] : null);
   }, [projects]);
 
+  useEffect(() => {
+    apiClient
+      .request({
+        url: 'employees:get',
+        params: {
+          appends: ['profile_picture'],
+          filter: {
+            user_id: context?.data?.data?.id,
+          },
+        },
+      })
+      .then((res) => {
+        const url = `${window.location.origin}${res.data.data.profile_picture[0].url}`;
+        apiClient
+          .request({
+            url: url,
+            method: 'GET',
+            responseType: 'arraybuffer',
+          })
+          .then((res) => {
+            const base64 = Buffer.from(res.data, 'binary').toString('base64');
+            setProfile_pciture(base64);
+          })
+          .catch((err) => {
+            throw err;
+          });
+      })
+      .catch((err) => {
+        throw err;
+      });
+  }, []);
+
   const apiClient = useAPIClient();
+  const handleChange: UploadProps['onChange'] = async ({ file }) => {};
 
   const handlePreview = async (file: UploadFile) => {
     if (!file.url && !file.preview) {
@@ -65,10 +100,12 @@ export const ClockIn = (props) => {
       message.error('请上传人脸照片');
       return;
     }
-
-    console.log('file', file);
-
     if (!selectedProject) {
+      message.error('未获取到打卡项目，请检查是否授权获取位置信息');
+      return;
+    }
+
+    if (faceMatchCheck == null || !faceMatchCheck) {
       message.error('未获取到打卡项目，请检查是否授权获取位置信息');
       return;
     }
@@ -105,14 +142,15 @@ export const ClockIn = (props) => {
 
   const onRemove = (file) => {
     setFile([]);
+    setFaceMatchCheck(null);
     return true;
   };
 
   const uploadImage = async (options) => {
     const { onSuccess, onError, file } = options;
-
     const fmData = new FormData();
     fmData.append('file', file);
+    setSpinning(true);
     try {
       const res = await apiClient.request({
         url: 'attachments:create',
@@ -122,13 +160,33 @@ export const ClockIn = (props) => {
           'Content-Type': 'multipart/form-data',
         },
       });
-
       setFile([{ id: res.data.data.id }]);
-
       onSuccess(file);
-      console.log('server res: ', res);
+      handleChange(file);
+
+      // 进行人脸识别对比；
+      const base64 = await getBase64(file as FileType);
+      const matchRes = await apiClient
+        .request({
+          url: 'clock:match',
+          method: 'POST',
+          data: {
+            image1: profile_pciture,
+            image2: base64.split(',')[1],
+          },
+        })
+        .then((matchRes) => {
+          const checked = matchRes.data.data.error_code == 0 && matchRes.data.data.result.score > 60;
+          if (checked) {
+            setFaceMatchCheck(true);
+            setSubmitEnable(true);
+          } else {
+            setFaceMatchCheck(false);
+            setSubmitEnable(false);
+          }
+          setSpinning(false);
+        });
     } catch (err) {
-      console.log('Eroor: ', err);
       onError({ err });
     }
   };
@@ -160,13 +218,26 @@ export const ClockIn = (props) => {
         </Flex>
 
         <Flex className="item" justify="space-between" align="center">
-          <div className="label">拍照（必填）</div>
+          <div className="label">
+            拍照（必填）
+            {faceMatchCheck != null && faceMatchCheck && (
+              <span style={{ color: '#1677ff' }}>
+                <CheckCircleFilled /> 人脸识别通过
+              </span>
+            )}
+            {faceMatchCheck != null && !faceMatchCheck && (
+              <span style={{ color: 'red' }}>
+                <CloseCircleFilled /> 人脸识别未通过，请重新拍照
+              </span>
+            )}
+          </div>
           <div>
             <Upload
               customRequest={uploadImage}
               listType="picture-card"
               capture="user"
               accept="image/*"
+              onChange={handleChange}
               onRemove={onRemove}
               onPreview={handlePreview}
             >
@@ -187,7 +258,7 @@ export const ClockIn = (props) => {
         </Flex>
 
         <Form.Item>
-          <Button type="primary" size="large" block htmlType="submit">
+          <Button type="primary" size="large" block disabled={!submitEnable} htmlType="submit">
             上班打卡
           </Button>
         </Form.Item>

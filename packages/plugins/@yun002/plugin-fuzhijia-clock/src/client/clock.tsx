@@ -11,6 +11,7 @@ import React, { useEffect, useState, useRef, memo } from 'react';
 import { css, cx, useViewport, CurrentUserProvider, useAPIClient } from '@nocobase/client';
 import { ClockIn } from './clockIn';
 import { ClockOut } from './clockOut';
+import { Spin } from 'antd';
 import { Attendance, ClockProject } from '../server/models';
 import './index.css';
 
@@ -60,6 +61,7 @@ export const Clock = memo(() => {
   const [unClock, setUnClock] = useState<Attendance | null>(null);
   const [location, setLocation] = useState({ longitude: 0, latitude: 0 });
   const [projects, setProjects] = useState<ClockProject[]>([]);
+  const [spinning, setSpinning] = useState(false);
 
   const myMap = useRef<any>(null);
   const mapLayer = useRef<any>(null);
@@ -148,6 +150,10 @@ export const Clock = memo(() => {
       },
     ];
     mapLayer.current.add(markers);
+  };
+
+  const setClockSpinning = (spining) => {
+    setSpinning(spining);
   };
 
   const initMap = () => {
@@ -239,9 +245,25 @@ export const Clock = memo(() => {
       <div
         style={{ position: 'absolute', bottom: 0, background: '#fff', zIndex: 1001, width: '100%', padding: '20px' }}
       >
-        {unClock && <ClockOut clockIn={unClock} location={location} OnClockCompleted={OnClockCompleted}></ClockOut>}
+        <Spin spinning={spinning}>
+          {unClock && (
+            <ClockOut
+              clockIn={unClock}
+              location={location}
+              setSpinning={setClockSpinning}
+              OnClockCompleted={OnClockCompleted}
+            ></ClockOut>
+          )}
 
-        {!unClock && <ClockIn location={location} projects={projects} OnClockCompleted={OnClockCompleted}></ClockIn>}
+          {!unClock && (
+            <ClockIn
+              location={location}
+              projects={projects}
+              setSpinning={setClockSpinning}
+              OnClockCompleted={OnClockCompleted}
+            ></ClockIn>
+          )}
+        </Spin>
       </div>
     </div>
   );

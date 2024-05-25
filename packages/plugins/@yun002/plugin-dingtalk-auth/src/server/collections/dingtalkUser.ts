@@ -37,6 +37,7 @@ export default defineCollection({
   name: 'DingtalkUser',
   fields: [
     { type: 'string', name: 'name', title: '姓名' },
+    { type: 'bigInt', name: 'appUserId', title: 'App用户ID' },
     { type: 'string', name: 'userid', title: '用户ID' },
     { type: 'string', name: 'unionid', title: 'UnionID' },
     { type: 'string', name: 'avatar', title: '' },

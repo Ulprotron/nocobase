@@ -28,10 +28,26 @@ export const DingtalkSignin = (props: { authenticator: Authenticator }) => {
   const apiClient = useAPIClient();
   const redirect = useRedirect();
   const { refreshAsync } = useCurrentUserContext();
+  const [corpId, setCorpId] = useState<string>('');
+  const isDingtalk = window.navigator.userAgent.toLowerCase().indexOf('dingtalk') > -1;
+
+  useEffect(() => {
+    apiClient
+      .request({
+        url: 'DingtalkSetting:getCorpId',
+      })
+      .then((res) => {
+        console.log(res);
+        res.data && setCorpId(res.data.data.corpId);
+      })
+      .catch((err) => {
+        throw err;
+      });
+  }, []);
 
   const onSignIn = () => {
     dd.getAuthCode({
-      corpId: 'dinged63d72e86ece67035c2f4657eb6378f',
+      corpId: corpId,
       success: (res) => {
         const { code } = res;
         apiClient.auth
@@ -50,8 +66,10 @@ export const DingtalkSignin = (props: { authenticator: Authenticator }) => {
   };
 
   return (
-    <Button onClick={onSignIn} icon={<DingtalkCircleFilled color="#01A0FF" />} block>
-      钉钉登录
-    </Button>
+    isDingtalk && (
+      <Button onClick={onSignIn} icon={<DingtalkCircleFilled color="#01A0FF" />} block>
+        钉钉登录
+      </Button>
+    )
   );
 };

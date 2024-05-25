@@ -10,7 +10,7 @@ export class PluginFuzhijiaClockClient extends Plugin {
 
   // You can get and modify the app instance here
   async load() {
-    this.router.add('hello', {
+    this.router.add('fuzhijia-clock', {
       path: '/clock',
       Component: Clock,
     });

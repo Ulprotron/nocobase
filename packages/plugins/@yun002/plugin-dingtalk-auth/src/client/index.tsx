@@ -24,9 +24,9 @@ export class PluginDingtalkAuthClient extends Plugin {
   async load() {
     console.log(this.app);
 
-    this.app.pluginSettingsManager.add('yun002', {
+    this.app.pluginSettingsManager.add('dingtalk', {
       title: '钉钉集成',
-      icon: 'FileOutlined',
+      icon: 'DingdingOutlined',
       Component: DingtalkSetting,
       aclSnippet: 'pm.file-manager.storages',
     });

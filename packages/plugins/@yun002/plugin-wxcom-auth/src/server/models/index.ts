@@ -12,18 +12,49 @@ export type AccessToken = {
   expires_at: Date;
 };
 
-export type WxcomDept = {
+export interface WxResponse {
+  errcode: number;
+  errmsg: string;
+}
+
+export interface WxDeptListResponse extends WxResponse {
+  department: WxDept[];
+}
+
+export interface WxUserListResponse extends WxResponse {
+  userlist: WxUser[];
+}
+
+export type WxDept = {
   id: number;
-  deptId: number;
   parentid: number;
   order: number;
   name: string;
   name_en: string;
-  department_leader: [string];
+  isleaf: boolean;
+  ismain: boolean;
+  department_leader: string[];
 };
 
-export type WxcomUser = {
+export type WxDeptUser = {
+  appDeptId: number;
+  appUserId: number;
+  deptid: number;
+  name: string;
+  isleader: boolean;
+  ismain: boolean;
+};
+
+export type WxUser = {
+  id: number;
+  name: string;
+  status: number;
+  enable: number;
+  isleader: number;
+  main_department: number;
   userid: string;
+  department: number[];
+  is_leader_in_dept: number[];
   gender: number;
   avatar: string;
   qr_code: string;
