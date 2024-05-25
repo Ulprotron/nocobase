@@ -87,7 +87,7 @@ const SettingsMenu: React.FC<{
     },
   ];
 
-  return <Menu items={items} />;
+  return <Menu />;
 };
 
 const helpClassName = css`

@@ -1,0 +1,62 @@
+.line
+{
+  border-bottom: 1px solid #e8e8e8;
+}
+.item
+{
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+.item .label
+{
+  font-size: 16px;
+}
+.item .text
+{
+  font-size: 12px;
+  color: #666;;
+}
+
+.clock-out-form .top-info
+{
+  position: fixed;
+  top: 10px;
+  width: calc(100% - 20px);
+  padding: 5px;
+  color: #666;
+
+}
+
+.top-info .left
+{
+  background-color: #e8e8e8;
+  width: 150px;
+  border-radius: 2;
+  margin-right: 10px;
+  padding: 5px;
+
+  .label{
+    font-size: 16px;
+    color: #000000;
+  }
+}
+
+
+.top-info .right
+{
+  margin-left: 10px;
+  background-color: #e8e8e8;
+  width: 150px;
+  border-radius: 2;
+  padding: 5px;
+
+  .label{
+    font-size: 16px;
+    color: #000000;
+  }
+}
+
+
+.ant-drawer{
+  z-index: 1003 !important;
+}

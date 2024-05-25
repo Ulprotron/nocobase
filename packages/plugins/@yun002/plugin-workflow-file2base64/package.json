@@ -1,0 +1,14 @@
+{
+  "name": "@yun002/plugin-workflow-file2base64",
+  "version": "1.0.0-alpha.5",
+  "main": "dist/server/index.js",
+  "dependencies": {},
+  "peerDependencies": {
+    "@nocobase/client": "1.x",
+    "@nocobase/server": "1.x",
+    "@nocobase/test": "1.x"
+  },
+  "keywords": [
+    "Workflow"
+  ]
+}
