@@ -12,6 +12,8 @@ import { Schema } from '@formily/json-schema';
 import { useTranslation } from 'react-i18next';
 import { useFormBlockContext } from '../../../block-provider';
 import { CollectionFieldOptions_deprecated } from '../../../collection-manager';
+import { useDataBlockRequest } from '../../../data-source';
+import { useFlag } from '../../../flag-provider/hooks/useFlag';
 import { useBaseVariable } from './useBaseVariable';
 
 interface Props {
@@ -60,6 +62,14 @@ export const useFormVariable = ({ collectionName, collectionField, schema, noDis
   return result;
 };
 
+const useCurrentFormData = () => {
+  const ctx: any = useDataBlockRequest();
+  if (ctx?.data?.data?.length > 1) {
+    return;
+  }
+  return ctx?.data?.data?.[0] || ctx?.data?.data;
+};
+
 /**
  * 变量：`当前表单`
  * @param param0
@@ -74,7 +84,9 @@ export const useCurrentFormVariable = ({
 }: Props = {}) => {
   // const { getActiveFieldsName } = useFormActiveFields() || {};
   const { t } = useTranslation();
-  const { form, collectionName, service } = useFormBlockContext();
+  const { form, collectionName } = useFormBlockContext();
+  const formData = useCurrentFormData();
+  const { isVariableParsedInOtherContext } = useFlag();
   const currentFormSettings = useBaseVariable({
     collectionField,
     uiSchema: schema,
@@ -103,10 +115,10 @@ export const useCurrentFormVariable = ({
     currentFormSettings,
     /** 变量值 */
     currentFormCtx:
-      formInstance?.values && Object.keys(formInstance?.values)?.length
+      formInstance?.readPretty === false && formInstance?.values && Object.keys(formInstance?.values)?.length
         ? formInstance?.values
-        : service?.data?.data || formInstance?.values,
+        : formData || formInstance?.values,
     /** 用来判断是否可以显示`当前表单`变量 */
-    shouldDisplayCurrentForm: formInstance && !formInstance.readPretty,
+    shouldDisplayCurrentForm: formInstance && !formInstance.readPretty && !isVariableParsedInOtherContext,
   };
 };
