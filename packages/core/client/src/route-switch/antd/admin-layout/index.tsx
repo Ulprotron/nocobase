@@ -12,7 +12,7 @@ import { useSessionStorageState } from 'ahooks';
 import { App, ConfigProvider, Divider, Layout } from 'antd';
 import { createGlobalStyle } from 'antd-style';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Outlet, useLocation, useMatch, useNavigate, useParams } from 'react-router-dom';
+import { Link, Outlet, useLocation, useMatch, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ACLRolesCheckProvider,
   CurrentAppInfoProvider,
