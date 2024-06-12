@@ -7,21 +7,24 @@
  * For more information, please refer to: https://www.nocobase.com/agreement.
  */
 
-import { useFieldSchema } from '@formily/react';
+import { useField, useFieldSchema } from '@formily/react';
 import {
+  mergeFilter,
   useBlockRequestContext,
   useCollection_deprecated,
   useCollectionManager_deprecated,
   useCompile,
-  mergeFilter,
+  useCurrentAppInfo,
 } from '@nocobase/client';
 import lodash from 'lodash';
 import { saveAs } from 'file-saver';
 import { App } from 'antd';
 import { useExportTranslation } from './locale';
+import { useMemo } from 'react';
 
 export const useExportAction = () => {
   const { service, resource, props } = useBlockRequestContext();
+  const appInfo = useCurrentAppInfo();
   const defaultFilter = props?.params.filter;
   const actionSchema = useFieldSchema();
   const compile = useCompile();
@@ -30,16 +33,27 @@ export const useExportAction = () => {
   const { t } = useExportTranslation();
   const { modal } = App.useApp();
   const filters = service.params?.[1]?.filters || {};
+  const field = useField();
+  const exportLimit = useMemo(() => {
+    if (appInfo?.data?.exportLimit) {
+      return appInfo.data.exportLimit;
+    }
+
+    return 2000;
+  }, [appInfo]);
+
   return {
     async onClick() {
+      field.data = field.data || {};
       const confirmed = await modal.confirm({
         title: t('Export'),
-        content: t('Export warning'),
+        content: t('Export warning', { limit: exportLimit }),
         okText: t('Start export'),
       });
       if (!confirmed) {
         return;
       }
+      field.data.loading = true;
       const { exportSettings } = lodash.cloneDeep(actionSchema?.['x-action-settings'] ?? {});
       exportSettings.forEach((es) => {
         const { uiSchema, interface: fieldInterface } =
@@ -53,9 +67,6 @@ export const useExportAction = () => {
           ];
         }
         es.defaultTitle = uiSchema?.title;
-        if (fieldInterface === 'chinaRegion') {
-          es.dataIndex.push('name');
-        }
       });
       const { data } = await resource.export(
         {
@@ -73,6 +84,7 @@ export const useExportAction = () => {
         },
       );
       const blob = new Blob([data], { type: 'application/x-xls' });
+      field.data.loading = false;
       saveAs(blob, `${compile(title)}.xlsx`);
     },
   };

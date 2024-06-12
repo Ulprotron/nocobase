@@ -19,12 +19,13 @@ import { isInitializersSame, useApp } from '../../../application';
 import { usePlugin } from '../../../application/hooks';
 import { SchemaSettingOptions, SchemaSettings } from '../../../application/schema-settings';
 import { useSchemaToolbar } from '../../../application/schema-toolbar';
-import { useFormBlockContext } from '../../../block-provider';
+import { useFormBlockContext } from '../../../block-provider/FormBlockProvider';
 import {
   joinCollectionName,
   useCollectionManager_deprecated,
   useCollection_deprecated,
 } from '../../../collection-manager';
+import { DataSourceProvider, useDataSourceKey } from '../../../data-source';
 import { FlagProvider } from '../../../flag-provider';
 import { SaveMode } from '../../../modules/actions/submit/createSubmitActionSettings';
 import { SchemaSettingOpenModeSchemaItems } from '../../../schema-items';
@@ -41,7 +42,6 @@ import {
 import { DefaultValueProvider } from '../../../schema-settings/hooks/useIsAllowToSetDefaultValue';
 import { useLinkageAction } from './hooks';
 import { requestSettingsSchema } from './utils';
-import { DataSourceProvider, useDataSourceKey } from '../../../data-source';
 
 const MenuGroup = (props) => {
   return props.children;
@@ -79,6 +79,14 @@ export function ButtonEditor(props) {
               'x-visible': !isLink,
               // description: `原字段标题：${collectionField?.uiSchema?.title}`,
             },
+            iconColor: {
+              title: t('Color'),
+              required: true,
+              default: fieldSchema?.['x-component-props']?.iconColor || '#1677FF',
+              'x-hidden': !props.hasIconColor,
+              'x-component': 'ColorPicker',
+              'x-decorator': 'FormItem',
+            },
             type: {
               'x-decorator': 'FormItem',
               'x-component': 'Radio.Group',
@@ -93,18 +101,20 @@ export function ButtonEditor(props) {
                 { value: 'primary', label: '{{t("Highlight")}}' },
                 { value: 'danger', label: '{{t("Danger red")}}' },
               ],
-              'x-visible': !isLink,
+              'x-visible': !props.hasIconColor && !isLink,
             },
           },
         } as ISchema
       }
-      onSubmit={({ title, icon, type }) => {
+      onSubmit={({ title, icon, type, iconColor }) => {
         fieldSchema.title = title;
         field.title = title;
+        field.componentProps.iconColor = iconColor;
         field.componentProps.icon = icon;
         field.componentProps.danger = type === 'danger';
         field.componentProps.type = type || field.componentProps.type;
         fieldSchema['x-component-props'] = fieldSchema['x-component-props'] || {};
+        fieldSchema['x-component-props'].iconColor = iconColor;
         fieldSchema['x-component-props'].icon = icon;
         fieldSchema['x-component-props'].danger = type === 'danger';
         fieldSchema['x-component-props'].type = type || field.componentProps.type;

@@ -21,6 +21,7 @@ import { useMapTranslation } from '../../locale';
 import { MapEditorType } from '../../types';
 import { Search } from './Search';
 import { getCurrentPosition, getIcon } from './utils';
+import { useMapHeight } from '../hook';
 
 export type OverlayOptions = google.maps.PolygonOptions & google.maps.MarkerOptions & google.maps.PolylineOptions;
 
@@ -98,6 +99,13 @@ export const GoogleMapsComponent = React.forwardRef<GoogleMapForwardedRefProps, 
     const [errMessage, setErrMessage] = useState('');
     const api = useAPIClient();
     const { modal } = App.useApp();
+    const height = useMapHeight();
+
+    useEffect(() => {
+      if (map.current) {
+        map.current.setZoom(zoom);
+      }
+    }, [zoom]);
 
     const type = useMemo<MapEditorType>(() => {
       if (props.type) return props.type;
@@ -401,7 +409,7 @@ export const GoogleMapsComponent = React.forwardRef<GoogleMapForwardedRefProps, 
       <div
         className={css`
           position: relative;
-          height: 500px;
+          height: ${height || 500}px !important;
         `}
       >
         {!map.current && (
