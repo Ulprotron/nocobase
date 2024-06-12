@@ -20,8 +20,8 @@ import {
   useCollection,
   useCollectionManager,
   useDataSourceKey,
-  useFormBlockContext,
 } from '../';
+import { useFormBlockContext } from '../block-provider/FormBlockProvider';
 import { useFormActiveFields } from '../block-provider/hooks/useFormActiveFields';
 import { FieldOptions, useCollectionManager_deprecated, useCollection_deprecated } from '../collection-manager';
 import { Collection, CollectionFieldOptions } from '../data-source/collection/Collection';
@@ -42,7 +42,7 @@ export const gridRowColWrap = (schema: ISchema) => {
         type: 'void',
         'x-component': 'Grid.Col',
         properties: {
-          [schema.name || uid()]: schema,
+          [schema?.name || uid()]: schema,
         },
       },
     },
@@ -104,7 +104,7 @@ const quickEditField = [
   'lineString',
 ];
 
-export const useTableColumnInitializerFields = () => {
+export function useTableColumnInitializerFields() {
   const { name, currentFields = [] } = useCollection_deprecated();
   const { getInterface, getCollection } = useCollectionManager_deprecated();
   const fieldSchema = useFieldSchema();
@@ -165,9 +165,9 @@ export const useTableColumnInitializerFields = () => {
         schema,
       } as SchemaInitializerItemType;
     });
-};
+}
 
-export const useAssociatedTableColumnInitializerFields = () => {
+export function useAssociatedTableColumnInitializerFields() {
   const { name, fields } = useCollection_deprecated();
   const { getInterface, getCollectionFields, getCollection } = useCollectionManager_deprecated();
   const groups = fields
@@ -187,7 +187,6 @@ export const useAssociatedTableColumnInitializerFields = () => {
             // type: 'string',
             name: `${field.name}.${subField.name}`,
             // title: subField?.uiSchema?.title || subField.name,
-
             'x-component': 'CollectionField',
             'x-read-pretty': true,
             'x-collection-field': `${name}.${field.name}.${subField.name}`,
@@ -222,9 +221,9 @@ export const useAssociatedTableColumnInitializerFields = () => {
     });
 
   return groups;
-};
+}
 
-export const useInheritsTableColumnInitializerFields = () => {
+export function useInheritsTableColumnInitializerFields() {
   const { name } = useCollection_deprecated();
   const { getInterface, getInheritCollections, getCollection, getParentCollectionFields } =
     useCollectionManager_deprecated();
@@ -289,7 +288,7 @@ export const useInheritsTableColumnInitializerFields = () => {
         }),
     };
   });
-};
+}
 
 export const useFormItemInitializerFields = (options?: any) => {
   const { name, currentFields } = useCollection_deprecated();
@@ -717,7 +716,7 @@ const findSchema = (schema: Schema, key: string, action: string) => {
     if (s[key] === action) {
       return s;
     }
-    if (s['x-component'] !== 'Action.Container' && s['x-component'] !== 'AssociationField.Viewer') {
+    if (s['x-component'] !== 'Action.Container' && !s['x-component'].includes('AssociationField')) {
       const c = findSchema(s, key, action);
       if (c) {
         return c;
@@ -968,13 +967,14 @@ export const useCollectionDataSourceItems = ({
         // 目的是使点击无效
         onClick() {},
         componentProps: {
+          ...dataBlockInitializerProps,
           icon: null,
           title: otherText || t('Other records'),
           name: 'otherRecords',
           showAssociationFields: false,
           onlyCurrentDataSource: false,
           hideChildrenIfSingleCollection: false,
-          onCreateBlockSchema: dataBlockInitializerProps.onCreateBlockSchema,
+          fromOthersInPopup: true,
           componentType: componentTypeMap[componentName] || componentName,
           filter({ collection, associationField }) {
             if (filterOtherRecordsCollection) {

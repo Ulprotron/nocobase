@@ -9,7 +9,7 @@
 
 import { createForm } from '@formily/core';
 import { FormContext, useField, useFieldSchema } from '@formily/react';
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useCollectionManager_deprecated } from '../collection-manager';
 import { withDynamicSchemaProps } from '../hoc/withDynamicSchemaProps';
 import { useTableBlockParams } from '../modules/blocks/data-blocks/table';
@@ -49,14 +49,29 @@ interface Props {
    */
   collection?: string;
   children?: any;
+  expandFlag?: boolean;
 }
 
 const InternalTableBlockProvider = (props: Props) => {
-  const { params, showIndex, dragSort, rowKey, childrenColumnName, fieldNames, ...others } = props;
+  const {
+    params,
+    showIndex,
+    dragSort,
+    rowKey,
+    childrenColumnName,
+    expandFlag: propsExpandFlag = false,
+    fieldNames,
+    ...others
+  } = props;
   const field: any = useField();
   const { resource, service } = useBlockRequestContext();
   const fieldSchema = useFieldSchema();
-  const [expandFlag, setExpandFlag] = useState(fieldNames ? true : false);
+  const [expandFlag, setExpandFlag] = useState(fieldNames || propsExpandFlag ? true : false);
+
+  useEffect(() => {
+    setExpandFlag(fieldNames || propsExpandFlag);
+  }, [fieldNames || propsExpandFlag]);
+
   const allIncludesChildren = useMemo(() => {
     const { treeTable } = fieldSchema?.['x-decorator-props'] || {};
     const data = service?.data?.data;
@@ -67,8 +82,8 @@ const InternalTableBlockProvider = (props: Props) => {
   }, [service?.loading, fieldSchema]);
 
   const setExpandFlagValue = useCallback(
-    (falg) => {
-      setExpandFlag(falg || !expandFlag);
+    (flag) => {
+      setExpandFlag(flag || !expandFlag);
     },
     [expandFlag],
   );
@@ -106,18 +121,22 @@ const InternalTableBlockProvider = (props: Props) => {
 const useTableBlockParamsCompat = (props) => {
   const fieldSchema = useFieldSchema();
 
-  let params;
+  let params,
+    parseVariableLoading = false;
   // 1. 新版本的 schema 存在 x-use-decorator-props 属性
   if (fieldSchema['x-use-decorator-props']) {
     params = props.params;
+    parseVariableLoading = props.parseVariableLoading;
   } else {
     // 2. 旧版本的 schema 不存在 x-use-decorator-props 属性
     // 因为 schema 中是否存在 x-use-decorator-props 是固定不变的，所以这里可以使用 hooks
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    params = useTableBlockParams(props);
+    const tableBlockParams = useTableBlockParams(props);
+    params = tableBlockParams.params;
+    parseVariableLoading = tableBlockParams.parseVariableLoading;
   }
 
-  return params;
+  return { params, parseVariableLoading };
 };
 
 export const TableBlockProvider = withDynamicSchemaProps((props) => {
@@ -127,7 +146,7 @@ export const TableBlockProvider = withDynamicSchemaProps((props) => {
   const { getCollection, getCollectionField } = useCollectionManager_deprecated(props.dataSource);
   const collection = getCollection(props.collection, props.dataSource);
   const { treeTable } = fieldSchema?.['x-decorator-props'] || {};
-  const params = useTableBlockParamsCompat(props);
+  const { params, parseVariableLoading } = useTableBlockParamsCompat(props);
 
   let childrenColumnName = 'children';
 
@@ -147,6 +166,11 @@ export const TableBlockProvider = withDynamicSchemaProps((props) => {
     }
   }
   const form = useMemo(() => createForm(), [treeTable]);
+
+  // 在解析变量的时候不渲染，避免因为重复请求数据导致的资源浪费
+  if (parseVariableLoading) {
+    return null;
+  }
 
   return (
     <SchemaComponentOptions scope={{ treeTable }}>

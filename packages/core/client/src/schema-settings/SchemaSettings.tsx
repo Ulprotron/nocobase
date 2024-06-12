@@ -46,13 +46,19 @@ import { useTranslation } from 'react-i18next';
 import { Router } from 'react-router-dom';
 import { APIClientProvider } from '../api-client/APIClientProvider';
 import { useAPIClient } from '../api-client/hooks/useAPIClient';
-import { FormBlockContext, findFormBlock, useFormBlockContext, useFormBlockType } from '../block-provider';
+import { ApplicationContext, useApp } from '../application';
 import {
   BlockContext,
   BlockRequestContext_deprecated,
   useBlockContext,
   useBlockRequestContext,
 } from '../block-provider/BlockProvider';
+import {
+  FormBlockContext,
+  findFormBlock,
+  useFormBlockContext,
+  useFormBlockType,
+} from '../block-provider/FormBlockProvider';
 import { FormActiveFieldsProvider, useFormActiveFields } from '../block-provider/hooks';
 import { useLinkageCollectionFilterOptions, useSortFields } from '../collection-manager/action-hooks';
 import { useCollectionManager_deprecated } from '../collection-manager/hooks/useCollectionManager_deprecated';
@@ -93,7 +99,6 @@ import { EnableChildCollections } from './EnableChildCollections';
 import { ChildDynamicComponent } from './EnableChildCollections/DynamicComponent';
 import { FormLinkageRules } from './LinkageRules';
 import { useLinkageCollectionFieldOptions } from './LinkageRules/action-hooks';
-import { ApplicationContext, useApp } from '../application';
 
 export interface SchemaSettingsProps {
   title?: any;
@@ -146,6 +151,7 @@ export const SchemaSettingsProvider: React.FC<SchemaSettingsProviderProps> = (pr
 
 export const SchemaSettingsDropdown: React.FC<SchemaSettingsProps> = (props) => {
   const { title, dn, ...others } = props;
+  const app = useApp();
   const [visible, setVisible] = useState(false);
   const { Component, getMenuItems } = useMenuItem();
   const [, startTransition] = useReactTransition();

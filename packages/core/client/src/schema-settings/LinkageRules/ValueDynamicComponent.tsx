@@ -10,7 +10,7 @@
 import { Input, Select } from 'antd';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useFormBlockContext } from '../../block-provider';
+import { useFormBlockContext } from '../../block-provider/FormBlockProvider';
 import { useRecord } from '../../record-provider';
 import { Variable } from '.././../schema-component';
 import { useCompatOldVariables } from '../VariableInput/VariableInput';
@@ -71,7 +71,7 @@ export const ValueDynamicComponent = (props: ValueDynamicComponentProps) => {
     [collectionName, mode, setValue],
   );
   const textAreaStyle = useMemo(() => {
-    return { minWidth: 460, marginRight: 15 };
+    return { minWidth: 460 };
   }, []);
   const compatScope = useMemo(() => {
     return compatOldVariables(scope, {
@@ -120,7 +120,6 @@ export const ValueDynamicComponent = (props: ValueDynamicComponentProps) => {
         value={mode}
         style={{ width: 150 }}
         onChange={(value) => {
-          console.log(value);
           setMode(value);
           setValue({
             mode: value,

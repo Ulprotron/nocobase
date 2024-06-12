@@ -6,10 +6,11 @@ https://github.com/nocobase/nocobase/assets/1267426/1d6a3979-d1eb-4e50-b726-2f90
 
 <a href="https://trendshift.io/repositories/4112" target="_blank"><img src="https://trendshift.io/api/badge/repositories/4112" alt="nocobase%2Fnocobase | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-<a href="https://www.producthunt.com/posts/nocobase?utm_source=badge-top-post-badge&utm_medium=badge&utm_souce=badge-nocobase" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=456520&theme=light&period=daily" alt="NocoBase - Scalability&#0045;first&#0044;&#0032;open&#0045;source&#0032;no&#0045;code&#0032;platform | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+<a href="https://www.producthunt.com/posts/nocobase?embed=true&utm_source=badge-top-post-topic-badge&utm_medium=badge&utm_souce=badge-nocobase" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-topic-badge.svg?post_id=456520&theme=light&period=weekly&topic_id=267" alt="NocoBase - Scalability&#0045;first&#0044;&#0032;open&#0045;source&#0032;no&#0045;code&#0032;platform | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
 ## Recent major updates
 
+- [v1.0.1-alpha.1: Blocks support height settings - 2024/06/07](https://docs.nocobase.com/welcome/changelog/20240607)
 - [v1.0.0-alpha.15: New Plugins and Improved “Configure actions” Interaction - 2024/05/19](https://docs.nocobase.com/welcome/changelog/20240519)
 - [v1.0: Significant Milestone - 2024/04/28](https://docs.nocobase.com/welcome/release/v1001-changelog)
 - [v0.21: Block performance optimization - 2024/03/29](https://docs.nocobase.com/welcome/release/v0210-changelog)
@@ -21,8 +22,6 @@ https://github.com/nocobase/nocobase/assets/1267426/1d6a3979-d1eb-4e50-b726-2f90
 - [v0.15: New plugin settings manager - 2023/11/13](https://docs.nocobase.com/welcome/release/v0150-changelog)
 - [v0.14: New plugin manager, supports adding plugins through UI - 2023/09/11](https://docs.nocobase.com/welcome/release/v0140-changelog)
 - [v0.13: New application status flow - 2023/08/24](https://docs.nocobase.com/welcome/release/v0130-changelog)
-- [v0.12: New plugin build tool - 2023/08/01](https://docs.nocobase.com/welcome/release/v0120-changelog)
-- [v0.11: New client application, plugin and router - 2023/07/08](https://docs.nocobase.com/welcome/release/v0110-changelog)
 
 ## What is NocoBase
 
