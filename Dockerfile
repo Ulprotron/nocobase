@@ -1,5 +1,5 @@
 FROM node:20.13-bullseye as builder
-ARG VERDACCIO_URL=http://host.docker.internal:10104/
+ARG VERDACCIO_URL=http://106.75.16.42:10104/
 ARG COMMIT_HASH
 ARG APPEND_PRESET_LOCAL_PLUGINS
 ARG BEFORE_PACK_NOCOBASE="ls -l"
@@ -11,8 +11,8 @@ RUN sed -i "s@http://\(deb\|security\).debian.org@http://mirrors.tencent.com@g" 
 RUN apt-get update && apt-get install -y jq
 WORKDIR /tmp
 COPY . /tmp
-RUN npx npm-cli-adduser --username test --password test -e test@nocobase.com -r $VERDACCIO_URL
-# RUN npx npm-cli-login -u test -p test -e test@nocobase.com -r $VERDACCIO_URL
+# RUN npx npm-cli-adduser --username test --password test -e test@nocobase.com -r $VERDACCIO_URL
+RUN npx npm-cli-login -u test -p test -e test@nocobase.com -r $VERDACCIO_URL
 RUN cd /tmp && \
     NEWVERSION="$(cat lerna.json | jq '.version' | tr -d '"').$(date +'%Y%m%d%H%M%S')" \
         && tmp=$(mktemp) \
@@ -43,7 +43,7 @@ RUN cd /app \
   && tar -zcf ./nocobase.tar.gz -C /app/my-nocobase-app .
 
 
-FROM node:20.13-bullseye-slim
+FROM registry.cn-shanghai.aliyuncs.com/jessetalk/node:20.13-bullseye-slim
 RUN apt-get update && apt-get install -y nginx
 RUN rm -rf /etc/nginx/sites-enabled/default
 COPY ./docker/nocobase/nocobase.conf /etc/nginx/sites-enabled/nocobase.conf
