@@ -1,4 +1,4 @@
-FROM node:20.13-bullseye as builder
+FROM registry.cn-shanghai.aliyuncs.com/jessetalk/node:20.13-bullseye as builder
 ARG VERDACCIO_URL=http://106.75.16.42:10104/
 ARG COMMIT_HASH
 ARG APPEND_PRESET_LOCAL_PLUGINS
