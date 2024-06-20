@@ -40,7 +40,7 @@ export default class extends Instruction {
       type: 'string',
       required: true,
       title: 'SQL',
-      description: '{{sqlDescription()}}',
+      description: '',
       'x-decorator': 'FormItem',
       'x-component': 'WorkflowVariableRawTextArea',
       'x-component-props': {
@@ -52,11 +52,7 @@ export default class extends Instruction {
       },
     },
   };
-  scope = {
-    sqlDescription() {
-      return <Trans ns={NAMESPACE}></Trans>;
-    },
-  };
+  scope = {};
   components = {
     WorkflowVariableRawTextArea,
   };
