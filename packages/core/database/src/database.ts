@@ -811,7 +811,7 @@ export class Database extends EventEmitter implements AsyncEmitter {
 
   /* istanbul ignore next -- @preserve */
   async auth(options: Omit<QueryOptions, 'retry'> & { retry?: number | Pick<QueryOptions, 'retry'> } = {}) {
-    const { retry = 30, ...others } = options;
+    const { retry = 9, ...others } = options;
     const startingDelay = 50;
     const timeMultiple = 2;
 
